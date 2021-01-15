@@ -5,6 +5,7 @@ bitset<8> secretMessageInBitSet[4][4];
 bitset<8> secretKeyInBitSet[4][4];
 
 bitset<32> wordInAES[44];
+bitset<32> stateMatrix[4];
 
 bitset<8> AES_Matrix[4][4]= {{2,3,1,1},
     {1,2,3,1},
@@ -35,48 +36,6 @@ bitset<8> s_box[16][16] =
 
 
 
-bitset<32> byteToWord(bitset<8> bitSet1, bitset<8> b2, bitset<8> b3, bitset<8> b4)
-{
-    bitset<32> stringData;
-    bitset<8> unitStringData;
-    for(int i=0;i<32;i++)
-    {
-        if(i>=0 && i<=7)
-        {
-            unitStringData=bitSet1;
-        }
-
-        else if(i>=8 && i<=15)
-        {
-            unitStringData=bitSet2;
-        }
-
-        else if(i>=16 && i<=23)
-        {
-            unitStringData=bitSet3;
-        }
-
-        else
-        {
-            unitStringData=bitSet4;
-        }
-        if(unitStringData.test(i%8))
-        {
-            stringData.set(i);
-        }
-    }
-    return stringData;
-}
-
-
-void calculateStateMatrix()
-{
-    for(int i=0;i<4;i++)
-    {
-        stateMatrix[i]=byteToWord(plainTextInBits[i][0], plainTextInBits[i][1],
-                        plainTextInBits[i][2], plainTextInBits[i][3]);
-    }
-}
 
 
 
@@ -160,6 +119,7 @@ int hexaDecimalToInteger(char charectar)
     }
 }
 
+
 bitset<32> getSBoxValue(bitset<32> stringA)
 {
     string hexaDecimalData=messageToHexaDecimal(stringA);
@@ -184,30 +144,286 @@ bitset<32> getSBoxValue(bitset<32> stringA)
     return getValueFromSBox;
 }
 
+
+bitset<32> bitSetToWord(bitset<8> bitSet1, bitset<8> bitSet2, bitset<8> bitSet3, bitset<8> bitSet4)
+{
+    bitset<32> stringData;
+    bitset<8> unitStringData;
+    for(int i=0;i<32;i++)
+    {
+        if(i>=0 && i<=7)
+        {
+            unitStringData=bitSet1;
+        }
+
+        else if(i>=8 && i<=15)
+        {
+            unitStringData=bitSet2;
+        }
+
+        else if(i>=16 && i<=23)
+        {
+            unitStringData=bitSet3;
+        }
+
+        else
+        {
+            unitStringData=bitSet4;
+        }
+        if(unitStringData.test(i%8))
+        {
+            stringData.set(i);
+        }
+    }
+    return stringData;
+}
+
+
+bitset<8> wordTobitSet(bitset<32> s, int l)
+{
+    bitset<8> unitColumnValue;
+    for(int i=l*8;i<8*l+8;i++)
+    {
+        if(s.test(i))
+        {
+            unitColumnValue.set(i%8);
+        }
+    }
+    //cout << bitset<8>ToHex(unitColumnValue) << " " << l << " " << wordToHex(s) << endl;
+    return unitColumnValue;
+}
+void addRoundKey(int roundNumber)
+{
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=stateMatrix[i]^wordInAES[4*roundNumber+i];
+    }
+}
+
+
+
+bitset<8> multiplybitSets(bitset<8> a, bitset<8> b)
+{
+    if(a==1)
+    {
+        return b;
+    }
+
+    else if(a==2)
+    {
+        int flag=0;
+        if(b.test(7))
+        {
+            flag=1;
+        }
+
+        b<<=1;
+        if(flag)
+        {
+            for(int i=0;i<=4;i++)
+            {
+                if(b.test(i))
+                {
+                    b[i]=0;
+                }
+
+                else
+                {
+                    b[i]=1;
+                }
+                if(i==1)
+                {
+                    i++;
+                }
+            }
+        }
+        return b;
+    }
+
+    else
+    {
+        bitset<8> ans=multiplybitSets(2, b);
+        //cout << ans << endl;
+        return (ans^b);
+    }
+}
+
+void mixColumn(int roundNumber)
+{
+    bitset<8> unitColumnValue[4][4];
+
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            for(int k=0;k<4;k++)
+            {
+                unitColumnValue[i][j]^=multiplybitSets(AES_Matrix[i][k],
+                                        wordTobitSet(stateMatrix[j], k));
+                //cout << bitset<8>ToHex(multiplybitset<8>s(predefinedMatrix[i][k],
+                            //wordTobitset<8>(AES_Matrix[j], k))) << endl;
+//cout << bitset<8>ToHex(predefinedMatrix[i][k]) << " "
+ //<< bitset<8>ToHex(wordTobitset<8>(AES_Matrix[j], k)) << endl;
+            }
+            //cout << bitset<8>ToHex(unitColumnValue[i][j]) << " ";
+        }
+        //cout << "\n";
+    }
+
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=bitSetToWord(unitColumnValue[0][i], unitColumnValue[1][i], unitColumnValue[2][i], unitColumnValue[3][i]);
+    }
+}
+
+bitset<32> leftShift(bitset<32> s, int steps)
+{
+    steps=steps%4;
+    bitset<32> unitColumnValue;
+
+    for(int i=0;i<steps*8;i++)
+    {
+        if(s.test(i))
+        {
+            unitColumnValue.set(i);
+        }
+    }
+    s>>=8*steps;
+
+    for(int i=0;i<steps*8;i++)
+    {
+        if(unitColumnValue.test(i))
+        {
+            s.set(i+(32-steps*8));
+        }
+    }
+    return s;
+}
+
+
+
+
+
+void substitutionbitSets(int roundNumber)
+{
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=getSBoxValue(stateMatrix[i]);
+    }
+}
+
+void shiftRow(int roundNumber)
+{
+    bitset<32> r[4];
+
+    for(int i=0;i<4;i++)
+    {
+        r[i]=bitSetToWord(wordTobitSet(stateMatrix[0], i), wordTobitSet(stateMatrix[1], i),
+                        wordTobitSet(stateMatrix[2], i), wordTobitSet(stateMatrix[3], i));
+        //cout << wordToHex(r[i]) << endl;
+    }
+
+    for(int i=0;i<4;i++)
+    {
+        r[i]=leftShift(r[i], i);
+    }
+
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=bitSetToWord(wordTobitSet(r[0], i), wordTobitSet(r[1], i),
+                        wordTobitSet(r[2], i), wordTobitSet(r[3], i));
+    }
+}
+
+void printAES_Matrix()
+{
+    for(int i=0;i<4;i++)
+    {
+        cout << messageToHexaDecimal(stateMatrix[i]) << endl;
+    }
+}
+
+void printKey()
+{
+    for(int i=0;i<44;i++)
+    {
+        cout << "w[" << i << "] :" << messageToHexaDecimal(wordInAES[i]) << endl;
+    }
+}
+
+
+
+
+void formSubkeys()
+{
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<32;j++)
+        {
+            int k=j%8;
+            int p=j/8;
+
+            if(secretKeyInBitSet[i][p].test(k))
+            {
+                //cout << i << " " << p << " " << k << endl;
+                wordInAES[i].set(j);
+            }
+        }
+        //cout << w[i] << endl;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------
+
+void calculateStateMatrix()
+{
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=bitSetToWord(secretMessageInBitSet[i][0], secretMessageInBitSet[i][1],
+                        secretMessageInBitSet[i][2], secretMessageInBitSet[i][3]);
+    }
+}
+
+
+void calculateAES_Matrix()
+{
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=bitSetToWord(secretMessageInBitSet[i][0], secretMessageInBitSet[i][1],
+                        secretMessageInBitSet[i][2], secretMessageInBitSet[i][3]);
+    }
+}
+
+
 void calculateRoundKey()
 {
-    int i;
-    for(i=4;i<44;i=i+4) {
+
+    for(int i=4;i<44;i=i+4) {
+            cout<<i<<endl;
     bitset<8> qoobeeShiftedRow;
     bitset<32> shiftedRows;
     shiftedRows=wordInAES[i-1];
-    for(i=0;i<8;i++)
+    for( int i=0;i<8;i++)
     {
         if(shiftedRows.test(i))
         {
             qoobeeShiftedRow.set(i);
         }
     }
+    cout<<"Wrong Decision 4.a"<<endl;
 
     shiftedRows>>=8;
 
-    for(i=0;i<8;i++)
+    for(int i=0;i<8;i++)
     {
         if(qoobeeShiftedRow.test(i))
         {
             shiftedRows.set(i+24);
         }
     }
+
+        cout<<"Wrong Decision 4.b"<<endl;
+
     bitset<32> theSBoxNumber=getSBoxValue(shiftedRows);
     bitset<32> convertTheValue=((int)pow(2, i/4 -1)%229);
     theSBoxNumber^=convertTheValue;
@@ -215,6 +431,7 @@ void calculateRoundKey()
     wordInAES[i+1]=wordInAES[i]^wordInAES[i-3];
     wordInAES[i+2]=wordInAES[i+1]^wordInAES[i-2];
     wordInAES[i+3]=wordInAES[i+2]^wordInAES[i-1];
+
     }
 }
 void calculateSubKeys()
@@ -237,6 +454,13 @@ void calculateSubKeys()
     }
 }
 
+void printStateMatrix()
+{
+    for(int i=0;i<4;i++)
+    {
+        cout << messageToHexaDecimal(stateMatrix[i]) << endl;
+    }
+}
 
 void messageToHexaDecimal(string stringData, int k)
 {
@@ -267,9 +491,27 @@ void messageToHexaDecimal(string stringData, int k)
 
 void advanceDataEncryptionMethods()
 {
+
+
     messageToHexaDecimal(secretMessage,0);
+    cout<<"Wrong Decision 1"<<endl;
     messageToHexaDecimal(secretKey,1);
+        cout<<"Wrong Decision 2"<<endl;
+
     calculateSubKeys();
+        cout<<"Wrong Decision 3"<<endl;
+
+
+calculateRoundKey();
+    cout<<"Wrong Decision 4"<<endl;
+
+calculateStateMatrix();
+    cout<<"Wrong Decision 5"<<endl;
+
+addRoundKey(0);
+    cout<<"Wrong Decision 6"<<endl;
+
+
 
 
 }
@@ -284,5 +526,30 @@ int main()
 
     advanceDataEncryptionMethods();
 
+int i;
+for( i=1;i<=10;i++)
+    {
+    substitutionbitSets(1);
+    //printStateMatrix();
+    shiftRow(i);
+    //printStateMatrix();
+    if(i!=10)
+    mixColumn(i);
+    addRoundKey(i);
+    cout << "After Round " << i << ": " << endl;
+    printStateMatrix();
+    cout << "\n\n";
+    }
+
+    cout << "Cipher text : ";
+
+    for(int i=0;i<4;i++)
+    {
+        cout << messageToHexaDecimal(stateMatrix[i]) << " " ;
+    }
+
     return 0;
 }
+
+
+
