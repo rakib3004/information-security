@@ -33,6 +33,100 @@ bitset<8> s_box[16][16] =
 };
 
 
+
+
+bitset<32> byteToWord(bitset<8> bitSet1, bitset<8> b2, bitset<8> b3, bitset<8> b4)
+{
+    bitset<32> stringData;
+    bitset<8> unitStringData;
+    for(int i=0;i<32;i++)
+    {
+        if(i>=0 && i<=7)
+        {
+            unitStringData=bitSet1;
+        }
+
+        else if(i>=8 && i<=15)
+        {
+            unitStringData=bitSet2;
+        }
+
+        else if(i>=16 && i<=23)
+        {
+            unitStringData=bitSet3;
+        }
+
+        else
+        {
+            unitStringData=bitSet4;
+        }
+        if(unitStringData.test(i%8))
+        {
+            stringData.set(i);
+        }
+    }
+    return stringData;
+}
+
+
+void calculateStateMatrix()
+{
+    for(int i=0;i<4;i++)
+    {
+        stateMatrix[i]=byteToWord(plainTextInBits[i][0], plainTextInBits[i][1],
+                        plainTextInBits[i][2], plainTextInBits[i][3]);
+    }
+}
+
+
+
+string binaryToHexaDecimal(string binaryText)
+{
+    map<string,string> bitsMapping;
+    string hexaDecimalText="";
+    bitsMapping["0000"]="0";
+    bitsMapping["0001"]="1";
+    bitsMapping["0010"]="2";
+    bitsMapping["0011"]="3";
+    bitsMapping["0100"]="4";
+    bitsMapping["0101"]="5";
+    bitsMapping["0110"]="6";
+    bitsMapping["0111"]="7";
+    bitsMapping["1000"]="8";
+    bitsMapping["1001"]="9";
+    bitsMapping["1010"]="A";
+    bitsMapping["1011"]="B";
+    bitsMapping["1100"]="C";
+    bitsMapping["1101"]="D";
+    bitsMapping["1110"]="E";
+    bitsMapping["1111"]="F";
+    int i=0;
+    for(i=0; i<binaryText.length(); i=i+4)
+    {
+         string hexaChar="";
+
+        hexaChar+= binaryText[i];
+        hexaChar+= binaryText[i+1];
+        hexaChar+= binaryText[i+2];
+        hexaChar+= binaryText[i+3];
+        hexaDecimalText += bitsMapping[hexaChar];
+      //  cout<<hexaDecimalText<<endl;
+    }
+    return hexaDecimalText;
+}
+
+
+
+string bitSetToHexaDecimal(bitset<8> bitSetData)
+{
+    string stringData=bitSetData.to_string();
+    //cout << s;
+    string tensNumber=stringData.substr(0, 4);
+    string onesNumber=stringData.substr(4, 4);
+    return (binaryToHexaDecimal(tensNumber)+binaryToHexaDecimal(onesNumber));
+}
+
+
 string messageToHexaDecimal(bitset<32> stringA)
 {
     string hexaDecimalData;
@@ -46,34 +140,48 @@ string messageToHexaDecimal(bitset<32> stringA)
                 unitBitSet.set(j%8);
             }
         }
-        hexaDecimalData=hexaDecimalData+byteToHex(unitBitSet);
+        hexaDecimalData=hexaDecimalData+bitSetToHexaDecimal(unitBitSet);
     }
     return hexaDecimalData;
 }
 
 
+
+int hexaDecimalToInteger(char charectar)
+{
+    if(charectar>='0' && charectar<='9')
+    {
+        return (int)(charectar-'0');
+    }
+
+    else
+    {
+        return (10+(int)(charectar-'A'));
+    }
+}
+
 bitset<32> getSBoxValue(bitset<32> stringA)
 {
-    string h=messageToHexaDecimal(stringA);
-    bitset<32> ans;
-    int ac=0;
-    for(int i=0;i<h.length();i=i+2)
+    string hexaDecimalData=messageToHexaDecimal(stringA);
+    bitset<32> getValueFromSBox;
+    int positionValue=0;
+    for(int i=0;i<hexaDecimalData.length();i=i+2)
     {
         int x, y;
-        x=hexToInt(h[i]);
-        y=hexToInt(h[i+1]);
-        bitset<8> temp=S_Box[x][y];
+        x=hexaDecimalToInteger(hexaDecimalData[i]);
+        y=hexaDecimalToInteger(hexaDecimalData[i+1]);
+        bitset<8> unitValueFromSBox=s_box[x][y];
+
         for(int j=0;j<8;j++)
         {
-            if(temp.test(j))
+            if(unitValueFromSBox.test(j))
             {
-                ans.set(ac);
+                getValueFromSBox.set(positionValue);
             }
-            ac++;
+            positionValue++;
         }
-        //cout << ans << endl;
     }
-    return ans;
+    return getValueFromSBox;
 }
 
 void calculateRoundKey()
