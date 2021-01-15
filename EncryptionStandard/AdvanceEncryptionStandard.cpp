@@ -32,6 +32,83 @@ bitset<8> s_box[16][16] =
     {0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16}
 };
 
+
+string messageToHexaDecimal(bitset<32> stringA)
+{
+    string hexaDecimalData;
+    for(int i=0;i<32;i=i+8)
+    {
+        bitset<8> unitBitSet;
+        for(int j=i;j<i+8;j++)
+        {
+            if(stringA.test(j))
+            {
+                unitBitSet.set(j%8);
+            }
+        }
+        hexaDecimalData=hexaDecimalData+byteToHex(unitBitSet);
+    }
+    return hexaDecimalData;
+}
+
+
+bitset<32> getSBoxValue(bitset<32> stringA)
+{
+    string h=messageToHexaDecimal(stringA);
+    bitset<32> ans;
+    int ac=0;
+    for(int i=0;i<h.length();i=i+2)
+    {
+        int x, y;
+        x=hexToInt(h[i]);
+        y=hexToInt(h[i+1]);
+        bitset<8> temp=S_Box[x][y];
+        for(int j=0;j<8;j++)
+        {
+            if(temp.test(j))
+            {
+                ans.set(ac);
+            }
+            ac++;
+        }
+        //cout << ans << endl;
+    }
+    return ans;
+}
+
+void calculateRoundKey()
+{
+    int i;
+    for(i=4;i<44;i=i+4) {
+    bitset<8> qoobeeShiftedRow;
+    bitset<32> shiftedRows;
+    shiftedRows=wordInAES[i-1];
+    for(i=0;i<8;i++)
+    {
+        if(shiftedRows.test(i))
+        {
+            qoobeeShiftedRow.set(i);
+        }
+    }
+
+    shiftedRows>>=8;
+
+    for(i=0;i<8;i++)
+    {
+        if(qoobeeShiftedRow.test(i))
+        {
+            shiftedRows.set(i+24);
+        }
+    }
+    bitset<32> theSBoxNumber=getSBoxValue(shiftedRows);
+    bitset<32> convertTheValue=((int)pow(2, i/4 -1)%229);
+    theSBoxNumber^=convertTheValue;
+    wordInAES[i]=wordInAES[i-4]^theSBoxNumber;
+    wordInAES[i+1]=wordInAES[i]^wordInAES[i-3];
+    wordInAES[i+2]=wordInAES[i+1]^wordInAES[i-2];
+    wordInAES[i+3]=wordInAES[i+2]^wordInAES[i-1];
+    }
+}
 void calculateSubKeys()
 {
 
