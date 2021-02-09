@@ -2,52 +2,46 @@
 #include<iostream>
 #include<math.h>
 using namespace std;
-// find gcd
 
-int gcd(int a, int b) {
-   int t;
-   while(1) {
-      t= a%b;
-      if(t==0)
-      return b;
-      a = b;
-      b= t;
-   }
+
+long long int calculatePublicKey(long long int G,long long int a,long long int P){
+
+long long int powerOfGa = pow(G,a);
+
+return  powerOfGa%P;
+
 }
 
 int main() {
 
-   double p = 59, q =61;
-   double n=p*q;
-   double phi = (p-1)*(q-1);
+ long long int P,G, X,Y, keyA, keyB, privateKeyA, privateKeyB;
 
-   double e=2;
-   // 1 < e < phi(n) and gcd(e, phi(n)) = 1
-   while(e<phi) {
-      if(gcd(e,phi)==1)
-         break;
-      else
-         e++;
-   }
+ P=23;
+ G=9;
+ privateKeyA=4;
+ privateKeyB=3;
 
-   // d*e = 1 mod phi
-   double d=1/e;
-   d=fmod(d,phi);
-   double text = 80;
+X= calculatePublicKey(G,privateKeyA,P);
+Y= calculatePublicKey(G,privateKeyB,P);
 
-   double c ;
-   double m;
-   c=fmod(pow(text,e),n);
 
-   cout<<"Text = "<<text << endl;
-   cout<<"n = " <<n << endl;
-   cout<<"phi = "<<phi << endl;
-   cout<<"e = "<<e << endl;
-   cout<<"d = "<<d << endl;
-   cout<<"Encrypted text = "<<c << endl;
+cout<<"The value of P = "<<P<<endl;
+cout<<"The value of G = "<<G<<endl;
+cout<<"The value of private key a = "<<privateKeyA<<endl;
+cout<<"The value of private key b = "<<privateKeyB<<endl;
+cout<<"The value of X = "<<X<<endl;
+cout<<"The value of Y = "<<Y<<endl;
 
-   m=fmod(pow(text,e*d),n);
+keyA=calculatePublicKey(Y,privateKeyA,P);
+keyB=calculatePublicKey(X,privateKeyB,P);
 
-   cout<<"Decrypted text = "<<m;
-   return 0;
+if(keyA==keyB){
+    cout<<"Here, key a= "<<keyA<<" and key b= "<<keyB<<endl<<"So, both are same"<<endl;
+}
+else{
+            cout<<"Here, key a= "<<keyA<<" and key b= "<<keyB<<endl<<"So, both are no same same"<<endl;
+
+
+}
+
 }
