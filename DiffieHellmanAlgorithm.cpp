@@ -12,25 +12,14 @@ return  powerOfGa%P;
 
 }
 
-long long int primitive_root( long long int m){
-	for(ll i=2;i<m;i++){
-		if(__gcd(i,m)==1)
-		return i;
-	}
-	return -1
-}
-
 int main() {
 
  long long int P,G, X,Y, keyA, keyB, privateKeyA, privateKeyB;
 
- P=29;
- G=16;
-
+ P=23;
+ G=9;
  privateKeyA=4;
  privateKeyB=3;
-
-P=primitive_root(G);
 
 X= calculatePublicKey(G,privateKeyA,P);
 Y= calculatePublicKey(G,privateKeyB,P);
