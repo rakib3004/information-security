@@ -31,10 +31,11 @@ int main() {
  A:
  P=23;
  G=9;
-
+cout<<"Enter P & G : ";
 cin>>P>>G;
 
 if(coprime(P,G)==false){
+        cout<<"Try Again !!!"<<endl;
     goto A;
 }
 
@@ -59,7 +60,7 @@ if(keyA==keyB){
     cout<<"Here, key a= "<<keyA<<" and key b= "<<keyB<<endl<<"So, both are same"<<endl;
 }
 else{
-            cout<<"Here, key a= "<<keyA<<" and key b= "<<keyB<<endl<<"So, both are no same same"<<endl;
+            cout<<"Here, key a= "<<keyA<<" and key b= "<<keyB<<endl<<"So, both are not same"<<endl;
 
 
 }
