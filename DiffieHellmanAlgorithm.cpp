@@ -1,6 +1,8 @@
 
 #include<iostream>
 #include<math.h>
+#include <iostream>
+#include <algorithm>
 using namespace std;
 
 
@@ -12,14 +14,32 @@ return  powerOfGa%P;
 
 }
 
+
+
+bool coprime(long long int a, long long  int b) {
+
+    if (__gcd(a, b) == 1)
+        return true;
+    else
+        return false;
+}
+
 int main() {
 
  long long int P,G, X,Y, keyA, keyB, privateKeyA, privateKeyB;
 
+ A:
  P=23;
  G=9;
- privateKeyA=4;
- privateKeyB=3;
+
+cin>>P>>G;
+
+if(coprime(P,G)==false){
+    goto A;
+}
+
+ privateKeyA=5;
+ privateKeyB=7;
 
 X= calculatePublicKey(G,privateKeyA,P);
 Y= calculatePublicKey(G,privateKeyB,P);
